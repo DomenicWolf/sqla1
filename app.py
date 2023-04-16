@@ -1,7 +1,7 @@
 """Blogly application."""
 
 from flask import Flask,render_template,redirect,request,session,flash
-from models import db, connect_db,User
+from models import db, connect_db,User,Post
 from flask_debugtoolbar import DebugToolbarExtension
 
 app = Flask(__name__)
@@ -72,4 +72,56 @@ def delete_user(user_id):
     db.session.commit()
 
     return redirect('/')
+
+
+@app.route('/users/<int:user_id>/posts/form')
+def post_form(user_id):
+    user = User.query.get(user_id)
+    
+    return render_template('pform.html',user=user)
+
+
+@app.route('/users/<int:user_id>/posts/new',methods=['POST'])
+def create_post(user_id):
+    title = request.form['title']
+    content = request.form['content']
+    id = user_id
+    new=Post(title=title,content=content,user_id=id)
+    db.session.add(new)
+    db.session.commit()
+    return redirect(f'/users/{user_id}')
+
+@app.route('/posts/<int:post_id>')
+def show_posts(post_id):
+    post = Post.query.get(post_id)
+    return render_template('post.html',post=post)
+
+#@app.route('/posts/<int:post_id>/edit')
+#def edit_posts(post_id):
+    
+
+@app.route('/posts/<int:post_id>/edit', methods=['POST','GET'])
+def edit_posts(post_id):
+    if request.method == 'POST':
+        title = request.form['title']
+        content = request.form['content']
+        post = Post.query.get(post_id)
+        post.title = title
+        post.content = content
+        db.session.commit()
+        return redirect(f'/posts/{post_id}')
+    else:
+        post = Post.query.get(post_id)
+        return render_template('pedit.html',post=post)
+
+@app.route('/posts/<int:post_id>/delete')
+def delete_posts(post_id):
+    post = Post.query.get(post_id)
+    Post.query.filter_by(id=post_id).delete()
+
+    db.session.commit()
+
+    return redirect(f'/users/{post.user_id}')
+    
+
 
