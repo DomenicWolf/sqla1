@@ -1,7 +1,7 @@
 """Blogly application."""
 
 from flask import Flask,render_template,redirect,request,session,flash
-from models import db, connect_db,User,Post
+from models import db, connect_db,User,Post,Tag,PostTag
 from flask_debugtoolbar import DebugToolbarExtension
 
 app = Flask(__name__)
@@ -122,6 +122,46 @@ def delete_posts(post_id):
     db.session.commit()
 
     return redirect(f'/users/{post.user_id}')
+
+@app.route('/tags')
+def show_tags():
+    tags = Tag.query.all()
+    return render_template('tags.html',tags=tags)
+
+@app.route('/tags/<int:id>')
+def show_tag_detail(id):
+    tag = Tag.query.get(id)
+    posts = tag.posts
+    return render_template('tag_details.html',tag=tag,posts=posts)
+
+@app.route('/tags/new',methods=['POST','GET'])
+def create_tag_form():
+    if request.method=='GET':
+        return render_template('tform.html')
+    else:
+        name=request.form['name']
+        new_tag = Tag(name=name)
+        db.session.add(new_tag)
+        db.session.commit()
+        return redirect('/tags')
     
+@app.route('/tags/<int:id>/edit',methods=['POST', 'GET'])
+def edit_tag(id):
+    if request.method=='GET':
+        return render_template('edit_tag.html',id=id)
+    else:
+        name=request.form['name']
+        tag = Tag.query.get(id)
+        tag.name = name
+        
+        db.session.commit()
+        return redirect('/tags')
+    
+@app.route('/tags/<int:id>/delete')
+def delete_tag(id):
+    Tag.query.filter_by(id=id).delete()
+    db.session.commit()
+    return redirect('/tags')
+
 
 
